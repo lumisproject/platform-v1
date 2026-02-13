@@ -34,7 +34,12 @@ def update_unit_risk_scores(updates):
     if not updates:
         return
     try:
-        supabase.table("memory_units").upsert(updates, on_conflict="project_id, unit_name").execute()
+        for update in updates:
+            supabase.table("memory_units") \
+                .update({"risk_score": update["risk_score"]}) \
+                .eq("project_id", update["project_id"]) \
+                .eq("unit_name", update["unit_name"]) \
+                .execute()
     except Exception as e:
         print(f"Failed to update risk scores: {e}")
 
@@ -50,7 +55,6 @@ def save_memory_unit(project_id, unit_data):
         "last_modified_at": unit_data.get("last_modified_at"),
         "author_email": unit_data.get("author_email")
     }
-    # .upsert() + on_conflict prevents duplicates
     return supabase.table("memory_units").upsert(
         payload, 
         on_conflict="project_id, unit_name"

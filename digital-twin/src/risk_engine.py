@@ -35,19 +35,17 @@ def calculate_predictive_risks(project_id):
 
     # 2. Define Thresholds
     now = datetime.now(timezone.utc)
-    LEGACY_THRESHOLD_DAYS = 180  # 6 months
+    LEGACY_THRESHOLD_DAYS = 120  # ~4 months
     RECENT_THRESHOLD_DAYS = 30   # 1 month
     
-    legacy_units = {}  # Map: unit_name -> unit_data
+    legacy_units = {}
     recent_units = set()
     unit_map = {u['unit_name']: u for u in units}
     
-    # 3. Classify Nodes (Legacy vs Recent)
     for unit in units:
         if not unit.get('last_modified_at'):
             continue
             
-        # Parse ISO date string from Supabase
         try:
             last_mod = datetime.fromisoformat(unit['last_modified_at'].replace('Z', '+00:00'))
         except ValueError:
@@ -62,47 +60,47 @@ def calculate_predictive_risks(project_id):
 
     # 4. Detect Conflicts (Edges)
     risks = []
-    risk_scores = {} # unit_name -> int
+    risk_scores = {}
     
-    # Analyze dependencies
     print(f"Analyzing {len(edges)} dependencies for conflicts...")
     
     for edge in edges:
         source = edge['source_unit_name']
         target = edge['target_unit_name']
         
-        # RISK PATTERN: Recent Code calling Legacy Code
-        if source in recent_units and target in legacy_units:
-            target_unit = legacy_units[target]
-            source_unit = unit_map[source]
+        matched_legacy_key = next((k for k in legacy_units.keys() if k == target or k.endswith(f"::{target}")), None)
+        
+        matched_recent_key = next((k for k in recent_units if k == source or k.endswith(f"::{source}")), None)
+
+        if matched_recent_key and matched_legacy_key:
+            target_unit = legacy_units[matched_legacy_key]
+            source_unit = unit_map[matched_recent_key]
             
-            print(f"Detected conflict: {source} -> {target}")
+            print(f"Detected conflict: {matched_recent_key} -> {matched_legacy_key}")
             
-            # --- NEW: LLM Semantic Analysis ---
-            # We fetch the code content and ask the LLM for a specific reason
+            # --- LLM Semantic Analysis ---
             analysis = analyze_conflict_with_llm(
-                source, source_unit.get('content', ''),
-                target, target_unit.get('content', '')
+                matched_recent_key, source_unit.get('content', ''),
+                matched_legacy_key, target_unit.get('content', '')
             )
             
             description = (
-                f"Legacy Conflict: Active code '{source}' depends on '{target}' "
+                f"Legacy Conflict: Active code '{matched_recent_key}' depends on '{matched_legacy_key}' "
                 f"(last touched {target_unit.get('last_modified_at', 'unknown')}).\n"
                 f"AI Analysis: {analysis}"
             )
-            # ----------------------------------
             
             risks.append({
                 "project_id": project_id,
                 "risk_type": "Legacy Conflict",
                 "severity": "Medium", 
                 "description": description,
-                "affected_units": [source, target]
+                "affected_units": [matched_recent_key, matched_legacy_key]
             })
             
             # Increase Risk Scores
-            risk_scores[source] = risk_scores.get(source, 0) + 25
-            risk_scores[target] = risk_scores.get(target, 0) + 10
+            risk_scores[matched_recent_key] = risk_scores.get(matched_recent_key, 0) + 25
+            risk_scores[matched_legacy_key] = risk_scores.get(matched_legacy_key, 0) + 10
 
     # 5. Base Risk Scores (Age Factors)
     score_updates = []
@@ -114,7 +112,6 @@ def calculate_predictive_risks(project_id):
         if u_name in legacy_units:
             current_score += 10
             
-        # Cap at 100
         final_score = min(current_score, 100)
         
         if final_score > 0:

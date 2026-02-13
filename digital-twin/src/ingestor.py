@@ -5,7 +5,6 @@ from tree_sitter_language_pack import get_parser
 from src.services import get_llm_completion, get_embedding, generate_footprint
 from src.db_client import supabase
 
-# --- Git Metadata Extraction ---
 def get_git_metadata(repo_path, file_path, repo_obj=None):
     try:
         repo = repo_obj if repo_obj else git.Repo(repo_path)
@@ -51,9 +50,19 @@ def get_code_data(file_path, supported_langs):
                 
                 calls = []
                 def find_calls(n):
+                    # CRITICAL FIX: Capture only the function name, not arguments
                     if n.type in ["call", "call_expression"]:
-                        calls.append(content[n.start_byte:n.end_byte].decode('utf-8', errors='ignore'))
-                    for child in n.children: find_calls(child)
+                        # This targets the name identifier (e.g., 'access_secure_data')
+                        name_id_node = n.child_by_field_name('function')
+                        if name_id_node:
+                            call_name = content[name_id_node.start_byte:name_id_node.end_byte].decode('utf-8', errors='ignore')
+                            # Clean up potential 'self.' or 'this.' prefixes if they exist
+                            if "." in call_name:
+                                call_name = call_name.split(".")[-1]
+                            calls.append(call_name)
+                    
+                    for child in n.children: 
+                        find_calls(child)
                 
                 find_calls(node)
                 results.append({"name": func_name, "code": func_body, "calls": list(set(calls))})
@@ -81,7 +90,6 @@ def enrich_block(code_block, unit_name):
         "footprint": generate_footprint(code_block)
     }
 
-# --- NEW: Orchestration with Cleanup Logic ---
 def ingest_repo(repo_url, project_id, user_id, progress_callback=None):
     repo_path = f"./temp_repos/{project_id}"
     
@@ -93,11 +101,13 @@ def ingest_repo(repo_url, project_id, user_id, progress_callback=None):
     else:
         repo = git.Repo.clone_from(repo_url, repo_path)
 
-    # Track files found in THIS scan for differential sync
     current_scan_files = []
     supported_langs = ["python", "javascript", "typescript"]
 
-    # 1. Process and Save Units
+    # Clear existing edges for this project to rebuild dependency graph
+    supabase.table("graph_edges").delete().eq("project_id", project_id).execute()
+
+    # 1. Process and Save Units + Edges
     for root, _, files in os.walk(repo_path):
         if '.git' in root: continue
         
@@ -105,7 +115,6 @@ def ingest_repo(repo_url, project_id, user_id, progress_callback=None):
             file_path = os.path.join(root, file)
             rel_path = os.path.relpath(file_path, repo_path)
             
-            # Identify if it's a code file
             blocks = get_code_data(file_path, supported_langs)
             if not blocks: continue
             
@@ -115,23 +124,34 @@ def ingest_repo(repo_url, project_id, user_id, progress_callback=None):
             for block in blocks:
                 if progress_callback: progress_callback("PROCESSING", f"Analyzing {rel_path} -> {block['name']}")
                 
+                footprint = generate_footprint(block['code'])
                 analysis = enrich_block(block['code'], block['name'])
-                if not analysis: continue
+                
+                summary = analysis['summary'] if analysis else "No summary available"
+                embedding = analysis['embedding'] if analysis else None
 
-                # Upsert into Supabase (Includes 'content' for Risk Engine)
+                # SCHEMA ALIGNMENT: 'code_footprint' instead of 'footprint'
                 supabase.table("memory_units").upsert({
                     "project_id": project_id,
                     "unit_name": block['name'],
                     "file_path": rel_path,
-                    "content": block['code'],  # Added for Deep Analysis
-                    "summary": analysis['summary'],
-                    "embedding": analysis['embedding'],
-                    "footprint": analysis['footprint'],
+                    "content": block['code'],
+                    "summary": summary,
+                    "embedding": embedding,
+                    "code_footprint": footprint, 
                     "last_modified_at": last_mod.isoformat() if last_mod else None,
                     "author_email": author
                 }).execute()
 
-    # 2. Cleanup: Remove deleted files from DB
+                # 2. Save Edges (The missing piece for risk detection)
+                for call_target in block['calls']:
+                    supabase.table("graph_edges").upsert({
+                        "project_id": project_id,
+                        "source_unit_name": block['name'],
+                        "target_unit_name": call_target
+                    }).execute()
+
+    # 3. Cleanup: Remove deleted files from DB
     if progress_callback: progress_callback("CLEANUP", "Removing orphan code blocks...")
     
     db_units = supabase.table("memory_units")\

@@ -96,6 +96,11 @@ export default function Dashboard() {
     }
   }
 
+  const handleIngestionComplete = () => {
+    setShowWizard(false);
+    window.location.reload(); // Force refresh to see new risks
+  };
+
   const handleChat = async (e) => {
     e.preventDefault()
     if (!input.trim() || chatLoading) return
@@ -132,14 +137,12 @@ export default function Dashboard() {
   }
 
   // --- VIEWS ---
-
-  // Priority View: If syncing, show the Wizard
   if (isIngesting) {
     return (
       <div className="page-center">
         <IngestionWizard 
             projectId={ingestionProjectId} 
-            onComplete={() => window.location.reload()} 
+            onComplete={handleIngestionComplete} 
         />
       </div>
     )
