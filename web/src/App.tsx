@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
+import SignUp from './pages/SignUp' // Import the separate SignUp page
 import Dashboard from './pages/Dashboard'
 
 function App() {
@@ -8,9 +9,13 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Auth type="login" />} />
-        <Route path="/signup" element={<Auth type="signup" />} />
+        {/* Map both /login and /auth to the Auth component */}
+        <Route path="/login" element={<Auth />} />
+        <Route path="/auth" element={<Auth />} /> 
+        <Route path="/signup" element={<SignUp />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        {/* Fallback to landing if route not found */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   )
