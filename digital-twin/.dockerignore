@@ -1,0 +1,6 @@
+.env
+.venv
+__pycache__/
+temp_project/
+lumis_memory.json
+.git

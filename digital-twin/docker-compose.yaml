@@ -1,0 +1,15 @@
+services:
+  lumis-engine:
+    build: .
+    container_name: lumis-engine
+    env_file: .env
+    volumes:
+      - ./memory:/app/memory
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: sync
+          path: ./main.py
+          target: /app/main.py

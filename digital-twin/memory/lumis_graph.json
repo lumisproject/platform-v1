@@ -1,0 +1,209 @@
+{
+    "directed": true,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "summary": "The heuristic function calculates the Manhattan distance between two points to estimate the cost in grid-based pathfinding algorithms like A*.",
+            "id": "main.py::heuristic"
+        },
+        {
+            "id": "abs(a[1] - b[1])"
+        },
+        {
+            "id": "abs(a[0] - b[0])"
+        },
+        {
+            "summary": "The astar function finds the shortest path from start to goal on a grid with obstacles using the A* search algorithm, which efficiently explores nodes by combining actual path cost with a heuristic estimate to prioritize exploration.",
+            "id": "main.py::astar"
+        },
+        {
+            "id": "set()"
+        },
+        {
+            "id": "heapq.heappush(open_set, (0, start))"
+        },
+        {
+            "id": "heuristic(start, goal)"
+        },
+        {
+            "id": "reconstruct_path(came_from, current)"
+        },
+        {
+            "id": "heapq.heappop(open_set)"
+        },
+        {
+            "id": "heuristic(neighbor, goal)"
+        },
+        {
+            "id": "len(grid)"
+        },
+        {
+            "id": "closed_set.add(current)"
+        },
+        {
+            "id": "heapq.heappush(open_set, (f_score[neighbor], neighbor))"
+        },
+        {
+            "id": "len(grid[0])"
+        },
+        {
+            "summary": "The function reconstructs a path from the start node to the current node by backtracking through the `came_from` dictionary of predecessors and reversing the collected nodes.",
+            "id": "main.py::reconstruct_path"
+        },
+        {
+            "id": "path.append(current)"
+        },
+        {
+            "summary": "The function visualizes and prints a grid by converting cells with value 1 to obstacles (#) and optionally overlaying a specified path with asterisks (*).",
+            "id": "main.py::print_grid"
+        },
+        {
+            "id": "print(\" \".join(row))"
+        },
+        {
+            "id": "range(len(grid[0]))"
+        },
+        {
+            "id": "\" \".join(row)"
+        },
+        {
+            "id": "range(len(grid))"
+        },
+        {
+            "summary": "The hello function prints a greeting and a brief introduction to an A* pathfinding algorithm implementation.",
+            "id": "main.py::hello"
+        },
+        {
+            "id": "print(\"This is a simple implementation of the A* algorithm in Python.\")"
+        },
+        {
+            "id": "print(\"Hello, A* Pathfinding!\")"
+        },
+        {
+            "summary": "The main function configures a grid with obstacles, defines start and goal coordinates, invokes the A* pathfinding algorithm with orthogonal movement restrictions, and prints whether a path was found.",
+            "id": "main.py::main"
+        },
+        {
+            "id": "print(\"No path found.\")"
+        },
+        {
+            "id": "print_grid(grid, path)"
+        },
+        {
+            "id": "astar(grid, start, goal, allow_diagonal=False)"
+        },
+        {
+            "id": "hello()"
+        },
+        {
+            "id": "print(\"Path found:\")"
+        }
+    ],
+    "edges": [
+        {
+            "source": "main.py::heuristic",
+            "target": "abs(a[1] - b[1])"
+        },
+        {
+            "source": "main.py::heuristic",
+            "target": "abs(a[0] - b[0])"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "set()"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "heapq.heappush(open_set, (0, start))"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "heuristic(start, goal)"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "reconstruct_path(came_from, current)"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "heapq.heappop(open_set)"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "heuristic(neighbor, goal)"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "len(grid)"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "closed_set.add(current)"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "heapq.heappush(open_set, (f_score[neighbor], neighbor))"
+        },
+        {
+            "source": "main.py::astar",
+            "target": "len(grid[0])"
+        },
+        {
+            "source": "main.py::reconstruct_path",
+            "target": "path.append(current)"
+        },
+        {
+            "source": "main.py::print_grid",
+            "target": "print(\" \".join(row))"
+        },
+        {
+            "source": "main.py::print_grid",
+            "target": "len(grid)"
+        },
+        {
+            "source": "main.py::print_grid",
+            "target": "range(len(grid[0]))"
+        },
+        {
+            "source": "main.py::print_grid",
+            "target": "len(grid[0])"
+        },
+        {
+            "source": "main.py::print_grid",
+            "target": "\" \".join(row)"
+        },
+        {
+            "source": "main.py::print_grid",
+            "target": "range(len(grid))"
+        },
+        {
+            "source": "main.py::hello",
+            "target": "print(\"This is a simple implementation of the A* algorithm in Python.\")"
+        },
+        {
+            "source": "main.py::hello",
+            "target": "print(\"Hello, A* Pathfinding!\")"
+        },
+        {
+            "source": "main.py::main",
+            "target": "print(\"No path found.\")"
+        },
+        {
+            "source": "main.py::main",
+            "target": "print_grid(grid, path)"
+        },
+        {
+            "source": "main.py::main",
+            "target": "astar(grid, start, goal, allow_diagonal=False)"
+        },
+        {
+            "source": "main.py::main",
+            "target": "hello()"
+        },
+        {
+            "source": "main.py::main",
+            "target": "print(\"Path found:\")"
+        }
+    ]
+}
